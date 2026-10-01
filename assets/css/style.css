@@ -1,0 +1,301 @@
+:root {
+  --azul-marca: #163A6B;
+  --azul-marca-escuro: #0E2748;
+  --verde-marca: #4CAF50;
+  --cinza-texto: #4A4A4A;
+  --cinza-claro: #F2F3F5;
+  --vermelho-alerta: #D9463D;
+  --amarelo-alerta: #E8821E;
+  --verde-ok: #3F9142;
+  --fonte: "Segoe UI", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; font-family: var(--fonte); background: var(--cinza-claro); color: var(--cinza-texto); }
+
+.painel { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+.cabecalho { display: flex; justify-content: space-between; align-items: center; background: var(--azul-marca); color: #fff; padding: 16px 32px; }
+.marca { display: flex; align-items: center; gap: 16px; }
+.logo { height: 48px; }
+.cabecalho h1 { margin: 0; font-size: 22px; font-weight: 500; }
+.cabecalho p { margin: 0; font-size: 13px; opacity: .8; }
+.info-topo { display: flex; align-items: center; gap: 32px; }
+.relogio { font-size: 28px; font-weight: 500; }
+.clima { font-size: 16px; }
+
+.conteudo { flex: 1; display: grid; grid-template-columns: 2.3fr 1fr; gap: 20px; padding: 20px 32px; overflow: hidden; }
+
+.grade-indicadores { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 16px; }
+.cartao { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.rotulo { margin: 0 0 8px; font-size: 13px; color: #777; }
+.valor { margin: 0; font-size: 32px; font-weight: 600; color: var(--azul-marca-escuro); }
+.detalhe { margin: 4px 0 0; font-size: 14px; }
+
+.mural { background: #fff; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
+.mural h2 { margin: 0 0 12px; font-size: 16px; color: var(--azul-marca-escuro); }
+#mural-item img { max-width: 100%; max-height: 70%; border-radius: 8px; display: block; margin: 0 auto; }
+.titulo-mural { font-weight: 600; margin: 0 0 6px; }
+
+.pagina-login { display: flex; align-items: center; justify-content: center; height: 100vh; background: var(--cinza-claro); }
+.cartao-login { background: #fff; padding: 32px; border-radius: 12px; width: 320px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+.logo-login { height: 56px; align-self: center; }
+.cartao-login h1 { text-align: center; font-size: 18px; margin: 0 0 8px; color: var(--azul-marca-escuro); }
+.cartao-login input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+.cartao-login button { margin-top: 8px; padding: 12px; background: var(--azul-marca); color: #fff; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; }
+.mensagem-erro { color: var(--vermelho-alerta); font-size: 13px; margin: 0; }
+.opcao-lembrar { font-size: 13px; display: flex; gap: 6px; align-items: center; }
+
+.layout-admin { display: flex; min-height: 100vh; }
+.menu-admin { width: 220px; background: var(--azul-marca-escuro); color: #fff; padding: 20px; flex-shrink: 0; }
+.menu-admin a { display: block; color: #fff; text-decoration: none; padding: 10px 0; opacity: .85; }
+.menu-admin a:hover { opacity: 1; }
+.area-admin { flex: 1; padding: 24px 32px; }
+.formulario { max-width: 480px; display: flex; flex-direction: column; gap: 12px; }
+.formulario label { font-size: 13px; color: #555; }
+.formulario input, .formulario select, .formulario textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; font-family: inherit; }
+.formulario button { padding: 12px; background: var(--verde-marca); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; }
+.tabela-simples { width: 100%; border-collapse: collapse; margin-top: 16px; }
+.tabela-simples th, .tabela-simples td { text-align: left; padding: 10px; border-bottom: 1px solid #e2e2e2; font-size: 14px; }
+.status-pill { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+.status-aberto, .status-planejamento { background: #fdeceb; color: var(--vermelho-alerta); }
+.status-em_analise, .status-em_andamento { background: #fdf3e0; color: var(--amarelo-alerta); }
+.status-encerrado, .status-concluida { background: #e9f6ea; color: var(--verde-ok); }
+
+/* --- v2: pirâmide, indicadores dinâmicos, produção por tanque --- */
+
+.conteudo { grid-template-columns: 1fr 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.conteudo section:nth-child(1) { grid-column: 1; grid-row: 1; }
+.conteudo section:nth-child(2) { grid-column: 2; grid-row: 1; }
+.conteudo section:nth-child(3) { grid-column: 3; grid-row: 1; }
+.conteudo section:nth-child(4) { grid-column: 4; grid-row: 1; }
+.conteudo section:nth-child(5) { grid-column: 1 / span 2; grid-row: 2; }
+.conteudo section:nth-child(6) { grid-column: 3; grid-row: 2; }
+.conteudo section:nth-child(7) { grid-column: 4; grid-row: 2; }
+
+.cartao { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); display: flex; flex-direction: column; overflow: hidden; }
+.titulo-cartao { margin: 0 0 10px; font-size: 14px; color: var(--azul-marca-escuro); }
+
+.piramide { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.dia-piramide { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 11px; font-weight: 500; background: #eef1f4; color: #777; }
+.status-dia-ok { background: var(--verde-ok); color: #fff; }
+.status-dia-atencao { background: var(--amarelo-alerta); color: #fff; }
+.status-dia-grave { background: var(--vermelho-alerta); color: #fff; }
+.dia-hoje { outline: 2px solid var(--azul-marca-escuro); outline-offset: 1px; }
+
+.mes-ano-piramide { text-align: center; font-size: 12px; color: #888; margin: 0 0 6px; text-transform: capitalize; }
+
+.legenda-status { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 11px; color: #666; }
+.bolinha { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; background: #eef1f4; }
+.bolinha-atencao { background: var(--amarelo-alerta); }
+.bolinha-grave { background: var(--vermelho-alerta); }
+
+.lista-desvios { margin-top: 12px; overflow-y: auto; flex: 1; }
+.linha-desvio { font-size: 12px; margin: 0 0 6px; color: #555; }
+.sem-dados { font-size: 12px; color: #999; }
+
+.cartao-indicador { position: relative; min-height: 0; }
+.cartao-indicador canvas { max-height: 100%; }
+
+.mural-item { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+.mural-item img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+
+.producao-total { display: flex; gap: 24px; margin-bottom: 12px; }
+.producao-total .rotulo { margin: 0; font-size: 12px; color: #777; }
+.producao-total .valor { margin: 2px 0 0; font-size: 26px; font-weight: 600; color: var(--azul-marca-escuro); }
+.producao-tanques { display: flex; gap: 16px; flex-wrap: wrap; }
+.tanque { background: var(--cinza-claro); border-radius: 8px; padding: 8px 14px; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-width: 100px; }
+.tanque .tanque-produto { font-size: 11px; color: #777; }
+
+.piramide-admin { display: flex; flex-wrap: wrap; gap: 4px; max-width: 420px; }
+
+/* --- v3: ações (editar/excluir/ativar), badges --- */
+.acoes-linha { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.acoes-linha a { color: var(--azul-marca); text-decoration: none; font-size: 13px; }
+.acoes-linha a:hover { text-decoration: underline; }
+.botao-link, .botao-link-perigo { background: none; border: none; padding: 0; font-size: 13px; cursor: pointer; text-decoration: underline; }
+.botao-link { color: var(--azul-marca); }
+.botao-link-perigo { color: var(--vermelho-alerta); }
+
+/* ============================================================
+   v4 — Etapa 2: tipografia responsiva (clamp), calendário maior,
+   cor "sem problema" corrigida, desvios estruturados/rotativos,
+   notícias RSS, correção visual do mural sem imagem.
+   Tudo escopado em ".painel" para não afetar o Painel Admin.
+   ============================================================ */
+
+.painel { font-size: clamp(14px, 1vw, 18px); }
+
+.painel .cabecalho { padding: clamp(10px, 1.2vw, 20px) clamp(16px, 2.4vw, 40px); align-items: center; justify-content: space-between; }
+.painel .marca { display: flex; align-items: center; gap: 16px; }
+.painel .separador-cabecalho { width: 1px; height: 32px; background-color: rgba(255,255,255,0.2); }
+.painel .area-topo-direita { display: flex; align-items: center; gap: clamp(12px, 1.6vw, 24px); flex-direction: row; }
+.painel .info-topo { display: flex; align-items: center; gap: 24px; }
+.painel .logo { height: clamp(28px, 3.5vw, 48px); }
+.painel .cabecalho h1 { font-size: clamp(16px, 1.8vw, 28px); font-weight: 700; letter-spacing: .2px; margin: 0; }
+.painel .cabecalho p { font-size: clamp(10px, 1vw, 13px); margin: 2px 0 0; color: #a1b2c5; }
+.painel .relogio-box {
+  font-size: clamp(12px, 1.1vw, 16px);
+  font-weight: 600;
+  background-color: rgba(0,0,0,0.2);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex; align-items: center; gap: 6px;
+}
+.painel .clima { font-size: clamp(12px, 1.1vw, 16px); font-weight: 600; }
+
+.painel .conteudo { padding: clamp(12px, 1.6vw, 24px); padding-bottom: clamp(46px, 6vh, 80px); gap: clamp(12px, 1.4vw, 22px); }
+.painel .cartao { padding: clamp(14px, 1.6vw, 26px); border-radius: clamp(8px, 0.8vw, 14px); }
+.painel .titulo-cartao { font-size: clamp(16px, 1.7vw, 26px); font-weight: 700; margin: 0 0 clamp(8px, 1vw, 16px); }
+.painel .rotulo { font-size: clamp(13px, 1.15vw, 18px); }
+.painel .valor { font-size: clamp(26px, 3.4vw, 46px); }
+.painel .detalhe { font-size: clamp(13px, 1.1vw, 17px); }
+
+/* Calendário — reduzido ~10% em relação à v4 para abrir espaço para os desvios */
+.painel .status-header-centered { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; margin-bottom: clamp(6px, 0.8vw, 12px); }
+.painel .status-header-centered h2 { margin-bottom: 2px; }
+.painel .mes-ano-piramide { font-size: clamp(12px, 1.1vw, 16px); font-weight: 600; color: var(--azul-marca-escuro); }
+.painel .piramide {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: clamp(3px, 0.4vw, 8px);
+  width: 100%;
+  max-width: 480px;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.painel .dia-piramide {
+  width: 100%;
+  aspect-ratio: 1;
+  font-size: clamp(11px, 1.1vw, 16px);
+  font-weight: 600;
+  border-radius: clamp(4px, 0.4vw, 8px);
+}
+.painel .piramide .dia-piramide:last-child:nth-child(30) { grid-column: 5; }
+.painel .piramide .dia-piramide:nth-last-child(2):nth-child(29) { grid-column: 4; }
+.painel .piramide .dia-piramide:nth-last-child(3):nth-child(28) { grid-column: 3; }
+
+/* Legenda: cores tem que bater exatamente com as do calendário */
+.painel .legenda-status { margin-top: clamp(8px, 1vw, 12px); font-size: clamp(11px, 0.9vw, 14px); gap: 8px; justify-content: center; flex-wrap: wrap; display: flex; }
+.painel .bolinha { width: clamp(10px, 1vw, 14px); height: clamp(10px, 1vw, 14px); }
+.painel .bolinha-ok { background: var(--verde-ok); }
+.painel .bolinha-atencao { background: var(--amarelo-alerta); }
+.painel .bolinha-grave { background: var(--vermelho-alerta); }
+
+/* Desvios de qualidade: layout e cores baseados no mockup */
+.painel .cabecalho-desvios { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eceff2; padding-bottom: clamp(6px, 1vw, 10px); margin-bottom: clamp(8px, 1vw, 16px); }
+.painel .desvios-titulo-badge { display: flex; align-items: center; gap: 8px; }
+.painel .desvios-titulo-badge h2 { margin: 0; }
+.painel .badge-registros-ativos { font-size: clamp(9px, 0.8vw, 12px); font-weight: 700; text-transform: uppercase; background: #fff0f0; color: #d32f2f; padding: 2px 8px; border-radius: 4px; border: 1px solid #f4c2c2; }
+.painel .desvios-refresh { font-size: clamp(10px, 0.9vw, 13px); color: #888; display: flex; align-items: center; gap: 6px; }
+.painel .pulse-dot { width: 8px; height: 8px; background-color: var(--verde-ok); border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(76, 175, 80, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
+
+.painel .lista-desvios { flex: 1; overflow-x: auto; overflow-y: hidden; }
+.tabela-desvios-dash { width: 100%; border-collapse: separate; border-spacing: 0; font-size: clamp(10px, 0.9vw, 13px); min-width: 600px; }
+.tabela-desvios-dash th, .tabela-desvios-dash td {
+  text-align: left;
+  padding: clamp(4px, 0.6vw, 8px) clamp(6px, 0.8vw, 10px);
+  border-bottom: 1px solid #eceff2;
+  vertical-align: middle;
+}
+.tabela-desvios-dash th { color: #999; font-weight: 600; text-transform: uppercase; font-size: 0.85em; }
+.tabela-desvios-dash td.col-data { white-space: nowrap; font-weight: 600; }
+.tabela-desvios-dash tr.linha-grave { background-color: #fffafa; }
+.tabela-desvios-dash tr.linha-grave td.col-data { color: var(--vermelho-alerta); }
+.tabela-desvios-dash tr.linha-resolvido { background-color: #fffdf5; }
+.tabela-desvios-dash tr.linha-resolvido td.col-data { color: var(--amarelo-alerta); }
+.tabela-desvios-dash tr.linha-neutro { background-color: #fafbfc; }
+.tabela-desvios-dash tr.linha-neutro td.col-data { color: #666; }
+
+.painel .rodape-desvios { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eceff2; padding-top: clamp(6px, 1vw, 10px); margin-top: clamp(8px, 1vw, 16px); font-size: clamp(10px, 0.85vw, 13px); color: #999; }
+
+/* Últimas notícias (RSS) */
+.painel .rodape-noticias {
+  background: #fff;
+  color: var(--cinza-texto);
+  padding: 8px 16px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  z-index: 100;
+  height: clamp(30px, 4vh, 46px);
+}
+.painel .rodape-noticias .rodape-noticias-titulo {
+  font-weight: 700;
+  font-size: clamp(12px, 1.1vw, 15px);
+  color: var(--azul-marca-escuro);
+  white-space: nowrap;
+  border-right: 2px solid var(--azul-marca-escuro);
+  padding-right: 16px;
+  z-index: 2;
+  background-color: #fff;
+}
+.painel .rodape-noticias .noticias-lista { flex: 1; overflow: hidden; white-space: nowrap; position: relative; display: flex; align-items: center; }
+
+.painel .noticia-item { font-size: clamp(12px, 1.05vw, 15px); display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
+.painel .noticia-item-container { display: flex; align-items: center; white-space: nowrap; animation: marquee 180s linear infinite; }
+.painel .noticia-item-container:hover { animation-play-state: paused; }
+@keyframes marquee {
+  0% { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+.painel .noticia-item a { color: var(--azul-marca); text-decoration: none; font-weight: 600; }
+.painel .noticia-item a:hover { text-decoration: underline; }
+.painel .noticia-item p { display: inline; color: #666; font-size: 0.95em; }
+
+/* Mural: se a imagem estiver quebrada, cai para exibir só o título (sem ícone de erro) */
+.painel .mural-item img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+.mural-item.sem-imagem { justify-content: center; }
+.cartao.cartao-mural.mural-fullscreen { padding: 0; border-radius: clamp(8px, 0.8vw, 14px); display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff; }
+.cartao.cartao-mural.mural-fullscreen .mural-item { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.cartao.cartao-mural.mural-fullscreen .mural-item img { border-radius: 0; object-fit: contain; width: 100%; height: 100%; display: block; margin: auto; }
+
+/* Em formulação: destaque maior para os números, layout vertical com barra de progresso */
+.painel .producao-vertical { display: flex; flex-direction: column; gap: clamp(4px, 0.8vw, 10px); height: 100%; justify-content: space-between; padding-bottom: 12px; }
+.painel .producao-vertical .prod-item { margin-bottom: 0; }
+.painel .producao-vertical .valor { font-size: clamp(18px, 2vw, 26px); line-height: 1.1; margin-top: 2px; color: #111; font-weight: 800; }
+.painel .flex-between { display: flex; justify-content: space-between; align-items: baseline; }
+.painel .percent-badge { color: var(--verde-ok); font-weight: 700; font-size: clamp(11px, 0.9vw, 13px); }
+.painel .progress-bar-bg { width: 100%; height: 5px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.painel .progress-bar-fill { height: 100%; background: var(--verde-ok); border-radius: 3px; transition: width 0.5s ease; }
+
+.painel .lista-tanques { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: clamp(6px, 0.8vw, 10px); background: #fafbfc; border-radius: 8px; border: 1px solid #eceff2; }
+.painel .lista-tanques-item { display: flex; justify-content: space-between; font-size: clamp(10px, 0.85vw, 12px); color: #555; }
+.painel .lista-tanques-item span:last-child { font-weight: 700; color: #333; }
+
+.painel .rodape-producao { display: flex; justify-content: space-between; align-items: center; font-size: clamp(9px, 0.8vw, 11px); color: #999; margin-top: 12px; padding-top: 12px; padding-bottom: 12px; }
+.painel .rodape-producao .pulse-dot { width: 6px; height: 6px; }
+
+/* Telas bem estreitas (tablet retrato/celular): empilha tudo em 1 coluna */
+@media (max-width: 1024px) {
+  html, body, .painel { height: auto; overflow-y: auto; overflow-x: hidden; }
+  .painel .conteudo { overflow: visible; height: auto; }
+  .painel .piramide { grid-template-columns: repeat(7, 1fr) !important; }
+  .painel .piramide .dia-piramide:last-child:nth-child(30),
+  .painel .piramide .dia-piramide:nth-last-child(2):nth-child(29),
+  .painel .piramide .dia-piramide:nth-last-child(3):nth-child(28) { grid-column: auto !important; }
+}
+
+@media (max-width: 900px) {
+  .painel .conteudo { grid-template-columns: 1fr; grid-template-rows: none; }
+  .painel .conteudo section:nth-child(n) { grid-column: 1; grid-row: auto; }
+  .painel .cartao { min-height: 240px; }
+}
+
+/* Evitar scroll em todas as telas grandes */
+@media (min-width: 901px) {
+  .painel .cartao-status { overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.2vw, 16px); }
+  .painel .cartao-status .piramide { justify-content: center; }
+  .painel .cartao-desvios { overflow: hidden; }
+  .painel .lista-desvios { overflow: hidden; }
+  .painel .cartao-producao { overflow: hidden; }
+  .painel .cartao-mural { overflow: hidden; }
+}

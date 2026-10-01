@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Protótipo – Indicadores da Qualidade 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eef2ee;--card:#fff;--ink:#1d2b22;--mut:#5b6b60;--line:#d5ddd5;--warn-bg:#fff4d6;--warn-ink:#6a4b00}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121a15;--card:#1a251e;--ink:#e6efe8;--mut:#9fb0a4;--line:#2d3b32;--warn-bg:#3a2f0f;--warn-ink:#ffe39a}}
+:root[data-theme="dark"]{--bg:#121a15;--card:#1a251e;--ink:#e6efe8;--mut:#9fb0a4;--line:#2d3b32;--warn-bg:#3a2f0f;--warn-ink:#ffe39a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,Arial,sans-serif;line-height:1.4}
+header{background:#2f7d4a;color:#fff;padding:14px 20px;display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;justify-content:space-between}
+header h1{margin:0;font-size:1.25rem;font-weight:600}
+header p{margin:0;font-size:.85rem;opacity:.9}
+label.t{font-size:.85rem;display:flex;gap:6px;align-items:center;cursor:pointer}
+main{max-width:1280px;margin:0 auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0}
+.cap{font-size:.78rem;color:var(--mut);margin:0 0 8px}
+.box{margin:0 auto 10px;max-width:420px;padding:6px 12px;text-align:center;font-size:.85rem;font-weight:600;border:1px solid rgba(0,0,0,.25);color:#111}
+.box span{display:block;font-weight:500}
+.cv{position:relative;height:300px}
+.warn{margin-top:10px;padding:8px 10px;border-radius:6px;background:var(--warn-bg);color:var(--warn-ink);font-size:.82rem}
+.ok{margin-top:10px;font-size:.82rem;color:var(--mut)}
+footer{max-width:1280px;margin:0 auto;padding:4px 16px 24px;color:var(--mut);font-size:.8rem}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Painel de Qualidade – Indicadores 2026</h1><p>Protótipo com dados reais das planilhas (ISO 9001)</p></div>
+  <label class="t"><input type="checkbox" id="meta"> Mostrar linha de meta (não existe nos JPGs)</label>
+</header>
+<main>
+  <section class="card"><p class="cap">Indicador_Manutenção_2026.xlsx</p>
+    <div class="box" style="background:#f4a08a">Indicador de Manutenção_2026<span>Objetivo: Cumprir o Plano de Manutenção</span><span>Meta: &gt; 90 % / Mensal</span></div>
+    <div class="cv"><canvas id="c1"></canvas></div><div id="n1"></div></section>
+  <section class="card"><p class="cap">Indicador_Produção_PCP_2026.xlsx</p>
+    <div class="box" style="background:#4a7fe0;color:#fff">Indicador Produção_ 2026<span>Objetivo: Entregar a Produção no Prazo Planejado</span><span>Meta: ≥90 % Mensal</span></div>
+    <div class="cv"><canvas id="c2"></canvas></div><div id="n2"></div></section>
+  <section class="card"><p class="cap">Indicador_Qualidade_Prod_Não_Conforme_2026.xlsx</p>
+    <div class="box" style="background:#f5c26b">Indicador_Qualidade_2026<span>Objetivo: produto NÃO CONFORME (refugo + reprocesso)</span><span>Meta: ≤ 2 % / semestral</span></div>
+    <div class="cv"><canvas id="c3"></canvas></div><div id="n3"></div></section>
+  <section class="card"><p class="cap">Ind_Monitoramento_Produção_Tipo_Perdas_2026.xlsx</p>
+    <div class="box" style="background:#f4a08a">Monitoramento Produção_2026<span>Objetivo: Monitorar os tipos de perdas durante o processo produtivo</span></div>
+    <div class="cv"><canvas id="c4"></canvas></div><div id="n4"></div></section>
+</main>
+<footer>Protótipo: os valores abaixo foram lidos das planilhas enviadas. Meses sem lançamento ficam vazios (não 0%).</footer>
+<script>
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family='"Segoe UI",system-ui,Arial,sans-serif';
+Chart.defaults.plugins.datalabels.display=false;
+var dark=matchMedia('(prefers-color-scheme: dark)').matches;
+var tick=dark?'#9fb0a4':'#5b6b60', grid=dark?'#2d3b32':'#e3e8e3', txt=dark?'#e6efe8':'#1d2b22';
+var M=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+var pad=function(a){var r=a.slice();while(r.length<12)r.push(null);return r;};
+var pct=function(v){return Math.round(v)+'%';};
+var pct2=function(v){return v.toFixed(2).replace('.',',')+'%';};
+var base={responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+  scales:{x:{grid:{display:false},ticks:{color:tick}},y:{grid:{color:grid},ticks:{color:tick}}}};
+var metaLine=function(v,label){return {type:'line',label:label,data:Array(12).fill(v),borderColor:'#c0392b',borderDash:[6,4],borderWidth:1.5,pointRadius:0,hidden:true,datalabels:{display:false}};};
+
+/* 1 – Manutenção */
+var man=[100,100,100,100,100,100,100,100,100];
+var c1=new Chart('c1',{type:'bar',data:{labels:M,datasets:[
+  {label:'% Manutenção realizada',data:pad(man),backgroundColor:'#2979ff',borderWidth:0,
+   datalabels:{display:function(c){return c.raw!==null},color:'#fff',font:{size:10,weight:'bold'},formatter:pct,anchor:'end',align:'end',offset:-14,backgroundColor:'#2979ff',borderRadius:2}},
+  metaLine(90,'Meta 90%')]},
+  options:Object.assign({},base,{scales:{x:base.scales.x,y:{min:0,max:100,grid:{color:grid},ticks:{color:tick,callback:function(v){return v+'%'},stepSize:10}}},plugins:{legend:{display:false}}})});
+
+/* 2 – Produção PCP */
+var op=[97.26,91.09,93.91,96.55,86.11,89.90,87.16,88.62],
+    of=[92.86,100,92.50,90.63,94.29,91.14,84.62,92.38],
+    ent=[95.06,95.54,93.21,93.59,90.20,90.52,85.89,90.50];
+var c2=new Chart('c2',{type:'bar',data:{labels:M,datasets:[
+  {label:'% OP no Prazo',data:pad(op),backgroundColor:'#4a7fe0',datalabels:{display:function(c){return c.raw!==null},rotation:-90,color:txt,font:{size:9},anchor:'end',align:'end',formatter:pct}},
+  {label:'% OF no Prazo',data:pad(of),backgroundColor:'#a6a6a6',datalabels:{display:function(c){return c.raw!==null},rotation:-90,color:txt,font:{size:9},anchor:'end',align:'end',formatter:pct}},
+  {type:'line',label:'% Entrega no Prazo Programado',data:pad(ent),borderColor:'#2c4fa8',borderWidth:1.5,pointRadius:0,spanGaps:false,
+   datalabels:{display:function(c){return c.raw!==null},backgroundColor:'#ffc000',color:'#fff',font:{size:10,weight:'bold'},borderRadius:2,padding:3,formatter:pct,align:'bottom',offset:6}},
+  metaLine(90,'Meta 90%')]},
+  options:Object.assign({},base,{scales:{x:base.scales.x,y:{min:60,max:105,grid:{color:grid},ticks:{color:tick,callback:function(v){return v+'%'}}}},plugins:{legend:{position:'bottom',labels:{color:tick,boxWidth:12,filter:function(i){return i.text!=='Meta 90%'||document.getElementById('meta').checked}}}}})});
+
+/* 3 – Qualidade (produto não conforme) */
+var c3=new Chart('c3',{type:'bar',data:{labels:['1º Semestre','2º Semestre'],datasets:[
+  {label:'% Total refugo',data:[0,0],backgroundColor:'#7ed957',datalabels:{display:true,formatter:pct2,color:txt,font:{size:10},anchor:'end',align:'end'}},
+  {label:'% Total produto reprocessado',data:[0.797,0],backgroundColor:'#9ec9f5',datalabels:{display:true,formatter:pct2,color:txt,font:{size:10},anchor:'end',align:'end'}},
+  {type:'line',label:'% Reprocesso + refugo',data:[0.797,0],borderColor:'#f2a900',backgroundColor:'#f2a900',borderWidth:2,pointRadius:4,
+   datalabels:{display:true,backgroundColor:'#ffc000',color:'#111',font:{size:11,weight:'bold'},borderRadius:2,padding:3,formatter:pct2,align:'top',offset:8}}]},
+  options:Object.assign({},base,{scales:{x:base.scales.x,y:{min:0,max:1.2,grid:{color:grid},ticks:{color:tick,callback:function(v){return v.toFixed(1).replace('.',',')+'%'}}}},plugins:{legend:{position:'bottom',labels:{color:tick,boxWidth:12}}}})});
+
+/* 4 – Perdas por tipo (bimestral) */
+var B=['JAN / FEV','MAR / ABR','MAI / JUN','JUL / AGO','SET / OUT','NOV / DEZ'];
+var perdas=[
+ ['1-Falha Operacional','#f4a261',[19,22,10,33]],
+ ['2-Desl. Parada Máquina','#f6d743',[0,0,0,1]],
+ ['3-Ajuste Processo','#8be05a',[30,38,24,19]],
+ ['4-Retrabalho','#b5651d',[0,0,0,1]],
+ ['5-Preparação Inicial','#b59b1f',[0,0,1,0]],
+ ['6-Defeito Fabricante','#4f9a3c',[7,4,4,6]],
+ ['7-Inspeções','#8fd3f4',[0,10,5,4]]];
+var c4=new Chart('c4',{type:'bar',data:{labels:B,datasets:perdas.map(function(p){
+  return {label:p[0],data:p[2].concat([null,null]),backgroundColor:p[1],
+   datalabels:{display:function(c){return c.raw!==null},color:txt,font:{size:8},anchor:'end',align:'end',offset:0}};})},
+  options:Object.assign({},base,{scales:{x:base.scales.x,y:{display:false,grid:{display:false}}},plugins:{legend:{position:'bottom',labels:{color:tick,boxWidth:10,font:{size:10}}}}})});
+
+/* Meta on/off */
+document.getElementById('meta').addEventListener('change',function(e){
+  [c1,c2].forEach(function(ch){ch.data.datasets.forEach(function(d,i){if(d.label==='Meta 90%'){ch.setDatasetVisibility(i,e.target.checked)}});ch.update();});
+});
+
+/* Avisos de auditoria */
+var acaoPCP=['Sem ação','Sem ação','Sem ação','Sem ação','Sem ação','Sem ação','Sem ação',''];
+var a2=[];ent.forEach(function(v,i){if(v<90&&/sem a[cç][aã]o/i.test(acaoPCP[i]))a2.push(M[i]+' ('+v.toFixed(1).replace('.',',')+'%)')});
+document.getElementById('n2').innerHTML=a2.length
+ ?'<div class="warn"><b>Atenção para auditoria:</b> abaixo da meta com ação "Sem ação" em '+a2.join(', ')+'. O sistema final exigirá o preenchimento da ação.</div>'
+ :'<div class="ok">Nenhum mês abaixo da meta sem ação registrada.</div>';
+document.getElementById('n1').innerHTML='<div class="ok">Todos os meses lançados cumpriram a meta (100%).</div>';
+document.getElementById('n3').innerHTML='<div class="warn"><b>Meta divergente:</b> o JPG indica ≤ 2% e a planilha indica &lt; 1%. Defina qual vale antes de publicar. 1º semestre: 0,80%.</div>';
+document.getElementById('n4').innerHTML='<div class="ok">Valores da planilha (jul/ago = 33, 1, 19, 1, 0, 6, 4) diferem do JPG de exemplo; o protótipo segue a planilha.</div>';
+</script>
+</body>
+</html>
