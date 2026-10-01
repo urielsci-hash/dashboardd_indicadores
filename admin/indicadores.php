@@ -28,34 +28,82 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["enviar_planilha"]) &&
                     $dataInicio = $_POST["data_inicio"];
                     $dataFim = $_POST["data_fim"];
 
+                    $tipo_indicador = $_POST["tipo_indicador"];
+
                     if (empty($abas)) {
                         $erro = "Não encontrei nenhuma aba nessa planilha.";
                     } else {
-                        foreach ($abas as $nomeIndicador) {
-                            $linhas = $leitor->lerLinhas($nomeIndicador, 3);
-                            $categorias = array_values(array_filter($linhas[0] ?? [], fn($v) => $v !== ""));
-                            $valoresBrutos = $linhas[1] ?? [];
-                            $valores = [];
-                            foreach ($categorias as $indice => $categoria) {
-                                $valores[] = (float) str_replace(",", ".", (string) ($valoresBrutos[$indice] ?? 0));
+                        $linhas = $leitor->lerLinhas($abas[0], 30);
+                        $dados = ["tipo" => $tipo_indicador];
+                        $nome_formatado = "";
+
+                        if ($tipo_indicador === "manutencao") {
+                            $nome_formatado = "Manutenção";
+                            $dados["data"] = [];
+                            $dados["acoes"] = [];
+                            for($c=5; $c<=16; $c++) {
+                                $val = isset($linhas[5][$c]) ? (float) str_replace(",", ".", $linhas[5][$c]) : 0;
+                                $dados["data"][] = $val;
                             }
-                            $tipo = (isset($linhas[2][0]) && strtolower(trim($linhas[2][0])) === "linha") ? "linha" : "barra";
-
-                            $stmtExiste = $pdo->prepare("SELECT id FROM indicadores WHERE nome = ?");
-                            $stmtExiste->execute([$nomeIndicador]);
-                            $existente = $stmtExiste->fetch();
-
-                            if ($existente) {
-                                $stmt = $pdo->prepare("UPDATE indicadores SET tipo_grafico = ?, categorias = ?, valores = ?, data_inicio = ?, data_fim = ?, ativo = 1, usuario_id = ? WHERE id = ?");
-                                $stmt->execute([$tipo, json_encode($categorias), json_encode($valores), $dataInicio, $dataFim, $_SESSION["usuario_id"], $existente["id"]]);
-                            } else {
-                                $stmt = $pdo->prepare("INSERT INTO indicadores (nome, tipo_grafico, categorias, valores, data_inicio, data_fim, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                                $stmt->execute([$nomeIndicador, $tipo, json_encode($categorias), json_encode($valores), $dataInicio, $dataFim, $_SESSION["usuario_id"]]);
+                            for($r=8; $r<=19; $r++) {
+                                $dados["acoes"][] = $linhas[$r][3] ?? "";
+                            }
+                        } elseif ($tipo_indicador === "producao_pcp") {
+                            $nome_formatado = "Produção PCP";
+                            $dados["op"] = [];
+                            $dados["of"] = [];
+                            $dados["entrega"] = [];
+                            $dados["acoes"] = [];
+                            for($c=5; $c<=16; $c++) {
+                                $dados["op"][] = isset($linhas[7][$c]) ? (float) str_replace(",", ".", $linhas[7][$c]) : 0;
+                                $dados["of"][] = isset($linhas[8][$c]) ? (float) str_replace(",", ".", $linhas[8][$c]) : 0;
+                                $dados["entrega"][] = isset($linhas[9][$c]) ? (float) str_replace(",", ".", $linhas[9][$c]) : 0;
+                            }
+                            for($r=12; $r<=23; $r++) {
+                                $dados["acoes"][] = $linhas[$r][3] ?? "";
+                            }
+                        } elseif ($tipo_indicador === "qualidade") {
+                            $nome_formatado = "Qualidade";
+                            $dados["refugo"] = [
+                                isset($linhas[19][4]) ? (float) str_replace(",", ".", $linhas[19][4]) : 0,
+                                isset($linhas[19][10]) ? (float) str_replace(",", ".", $linhas[19][10]) : 0
+                            ];
+                            $dados["reprocesso"] = [
+                                isset($linhas[20][4]) ? (float) str_replace(",", ".", $linhas[20][4]) : 0,
+                                isset($linhas[20][10]) ? (float) str_replace(",", ".", $linhas[20][10]) : 0
+                            ];
+                            $dados["total"] = [
+                                isset($linhas[21][4]) ? (float) str_replace(",", ".", $linhas[21][4]) : 0,
+                                isset($linhas[21][10]) ? (float) str_replace(",", ".", $linhas[21][10]) : 0
+                            ];
+                        } elseif ($tipo_indicador === "perdas") {
+                            $nome_formatado = "Perdas";
+                            $dados["datasets"] = [];
+                            for($r=3; $r<=9; $r++) {
+                                if(!isset($linhas[$r][4])) continue;
+                                $ds = ["label" => $linhas[$r][4], "data" => []];
+                                for($c=5; $c<=10; $c++) {
+                                    $ds["data"][] = isset($linhas[$r][$c]) && trim($linhas[$r][$c]) !== "" ? (float) str_replace(",", ".", $linhas[$r][$c]) : null;
+                                }
+                                $dados["datasets"][] = $ds;
                             }
                         }
+
+                        $stmtExiste = $pdo->prepare("SELECT id FROM indicadores WHERE nome = ?");
+                        $stmtExiste->execute([$nome_formatado]);
+                        $existente = $stmtExiste->fetch();
+
+                        if ($existente) {
+                            $stmt = $pdo->prepare("UPDATE indicadores SET tipo_grafico = ?, categorias = ?, valores = ?, data_inicio = ?, data_fim = ?, ativo = 1, usuario_id = ? WHERE id = ?");
+                            $stmt->execute([$tipo_indicador, json_encode([]), json_encode($dados, JSON_UNESCAPED_UNICODE), $dataInicio, $dataFim, $_SESSION["usuario_id"], $existente["id"]]);
+                        } else {
+                            $stmt = $pdo->prepare("INSERT INTO indicadores (nome, tipo_grafico, categorias, valores, data_inicio, data_fim, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                            $stmt->execute([$nome_formatado, $tipo_indicador, json_encode([]), json_encode($dados, JSON_UNESCAPED_UNICODE), $dataInicio, $dataFim, $_SESSION["usuario_id"]]);
+                        }
+
                         $pdo->prepare("INSERT INTO indicadores_arquivos (nome_arquivo, usuario_id) VALUES (?, ?)")->execute([$_FILES["arquivo"]["name"], $_SESSION["usuario_id"]]);
-                        registrarLog("indicadores", "Enviou uma planilha atualizando " . count($abas) . " indicador(es)");
-                        $mensagem = count($abas) . " indicador(es) criado(s)/atualizado(s) a partir da planilha.";
+                        registrarLog("indicadores", "Enviou planilha e atualizou indicador: $nome_formatado");
+                        $mensagem = "Indicador $nome_formatado atualizado a partir da planilha.";
                     }
                 } catch (Exception $e) {
                     $erro = "Não foi possível ler o arquivo: " . $e->getMessage();
@@ -67,30 +115,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["enviar_planilha"]) &&
     }
 }
 
-// --- Criar/editar indicador manualmente ---
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["salvar_indicador"])) {
-    $nome = trim($_POST["nome"]);
-    $tipo = $_POST["tipo_grafico"] === "linha" ? "linha" : "barra";
-    $categorias = array_map("trim", explode(",", $_POST["categorias"]));
-    $valores = array_map(fn($v) => (float) str_replace(",", ".", trim($v)), explode(",", $_POST["valores"]));
-    $dataInicio = $_POST["data_inicio"];
-    $dataFim = $_POST["data_fim"];
-    $idIndicador = $_POST["id"] ?? null;
 
-    if (count($categorias) !== count($valores) || $nome === "") {
-        $erro = "Confira o nome e se a quantidade de categorias bate com a quantidade de valores.";
-    } elseif ($idIndicador) {
-        $stmt = $pdo->prepare("UPDATE indicadores SET nome = ?, tipo_grafico = ?, categorias = ?, valores = ?, data_inicio = ?, data_fim = ? WHERE id = ?");
-        $stmt->execute([$nome, $tipo, json_encode($categorias), json_encode($valores), $dataInicio, $dataFim, $idIndicador]);
-        registrarLog("indicadores", "Editou um indicador manualmente");
-        $mensagem = "Indicador atualizado.";
-    } else {
-        $stmt = $pdo->prepare("INSERT INTO indicadores (nome, tipo_grafico, categorias, valores, data_inicio, data_fim, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$nome, $tipo, json_encode($categorias), json_encode($valores), $dataInicio, $dataFim, $_SESSION["usuario_id"]]);
-        registrarLog("indicadores", "Criou um indicador manualmente");
-        $mensagem = "Indicador criado.";
-    }
-}
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["alternar_ativo"])) {
     $pdo->prepare("UPDATE indicadores SET ativo = 1 - ativo WHERE id = ?")->execute([$_POST["id"]]);
@@ -111,12 +136,7 @@ if ($mostrarTodos) {
     $indicadores = $pdo->query("SELECT * FROM indicadores WHERE ativo = 1 AND CURDATE() BETWEEN data_inicio AND data_fim ORDER BY nome")->fetchAll();
 }
 
-$indicadorEmEdicao = null;
-if (!empty($_GET["editar"])) {
-    $stmt = $pdo->prepare("SELECT * FROM indicadores WHERE id = ?");
-    $stmt->execute([$_GET["editar"]]);
-    $indicadorEmEdicao = $stmt->fetch();
-}
+
 
 $tituloPagina = "Indicadores";
 require_once __DIR__ . "/../includes/layout_admin_topo.php";
@@ -128,40 +148,26 @@ require_once __DIR__ . "/../includes/layout_admin_topo.php";
 
 <h2>Enviar planilha (.xlsx)</h2>
 <p style="max-width:560px;font-size:13px;color:#666;">
-  Uma aba por indicador: o nome da aba vira o nome do indicador (se já existir um indicador com
-  esse nome, ele é atualizado — senão, é criado). Linha 1 = categorias, linha 2 = valores,
-  linha 3 (opcional, só na primeira célula) = "linha" ou "barra".
+  Selecione qual indicador da ISO 9001 está enviando. O sistema lerá exatamente a estrutura da planilha esperada para aquele indicador.
 </p>
 <form class="formulario" method="post" enctype="multipart/form-data">
+  <label>Tipo de Indicador</label>
+  <select name="tipo_indicador" required>
+    <option value="manutencao">Manutenção (Indicador_Manutenção_2026.xlsx)</option>
+    <option value="producao_pcp">Produção PCP (Indicador_Produção_PCP_2026.xlsx)</option>
+    <option value="qualidade">Qualidade / Não Conforme (Indicador_Qualidade_Prod.Não Conforme_2026.xlsx)</option>
+    <option value="perdas">Perdas (Ind_Monitoramento_Produção_Tipo Perdas 2026.xlsx)</option>
+  </select>
   <label>Planilha (.xlsx)</label>
   <input type="file" name="arquivo" accept=".xlsx" required>
   <label>Exibir de</label>
   <input type="date" name="data_inicio" value="<?= date("Y-m-d") ?>" required>
   <label>até</label>
   <input type="date" name="data_fim" value="<?= date("Y-m-d", strtotime("+30 days")) ?>" required>
-  <button type="submit" name="enviar_planilha" value="1">Enviar planilha</button>
+  <button type="submit" name="enviar_planilha" value="1">Processar planilha</button>
 </form>
 
-<h2 style="margin-top:32px;"><?= $indicadorEmEdicao ? "Editar indicador" : "Criar indicador manualmente" ?></h2>
-<form class="formulario" method="post">
-  <?php if ($indicadorEmEdicao): ?><input type="hidden" name="id" value="<?= $indicadorEmEdicao["id"] ?>"><?php endif; ?>
-  <label>Nome do indicador</label>
-  <input type="text" name="nome" value="<?= $indicadorEmEdicao ? htmlspecialchars($indicadorEmEdicao["nome"]) : "" ?>" required>
-  <label>Tipo de gráfico</label>
-  <select name="tipo_grafico">
-    <option value="barra" <?= (!$indicadorEmEdicao || $indicadorEmEdicao["tipo_grafico"] === "barra") ? "selected" : "" ?>>Barra</option>
-    <option value="linha" <?= ($indicadorEmEdicao && $indicadorEmEdicao["tipo_grafico"] === "linha") ? "selected" : "" ?>>Linha</option>
-  </select>
-  <label>Categorias (separadas por vírgula)</label>
-  <input type="text" name="categorias" placeholder="Jan, Fev, Mar" value="<?= $indicadorEmEdicao ? htmlspecialchars(implode(", ", json_decode($indicadorEmEdicao["categorias"], true))) : "" ?>" required>
-  <label>Valores (separados por vírgula, na mesma ordem)</label>
-  <input type="text" name="valores" placeholder="12, 9, 15" value="<?= $indicadorEmEdicao ? htmlspecialchars(implode(", ", json_decode($indicadorEmEdicao["valores"], true))) : "" ?>" required>
-  <label>Exibir de</label>
-  <input type="date" name="data_inicio" value="<?= $indicadorEmEdicao ? $indicadorEmEdicao["data_inicio"] : date("Y-m-d") ?>" required>
-  <label>até</label>
-  <input type="date" name="data_fim" value="<?= $indicadorEmEdicao ? $indicadorEmEdicao["data_fim"] : date("Y-m-d", strtotime("+30 days")) ?>" required>
-  <button type="submit" name="salvar_indicador" value="1"><?= $indicadorEmEdicao ? "Salvar edição" : "Criar indicador" ?></button>
-</form>
+
 
 <h2 style="margin-top:32px;">Indicadores <?= $mostrarTodos ? "(todos)" : "em exibição" ?></h2>
 <p style="font-size:12px;"><a href="?<?= $mostrarTodos ? "" : "todos=1" ?>"><?= $mostrarTodos ? "Mostrar só os em exibição" : "Mostrar todos (inclusive inativos/expirados)" ?></a></p>
@@ -170,11 +176,10 @@ require_once __DIR__ . "/../includes/layout_admin_topo.php";
   <?php foreach ($indicadores as $i): ?>
   <tr>
     <td><?= htmlspecialchars($i["nome"]) ?></td>
-    <td><?= $i["tipo_grafico"] ?></td>
+    <td>ISO 9001</td>
     <td><?= date("d/m/Y", strtotime($i["data_inicio"])) ?> a <?= date("d/m/Y", strtotime($i["data_fim"])) ?></td>
     <td><?= $i["ativo"] ? "Ativo" : "Inativo" ?></td>
     <td class="acoes-linha">
-      <a href="?editar=<?= $i["id"] ?>">Editar</a>
       <form method="post" style="display:inline;">
         <input type="hidden" name="id" value="<?= $i["id"] ?>">
         <button type="submit" name="alternar_ativo" value="1" class="botao-link"><?= $i["ativo"] ? "Desativar" : "Ativar" ?></button>

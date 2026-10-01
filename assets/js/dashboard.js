@@ -237,39 +237,168 @@ var graficosIndicadores = [];
 var indicadoresDisponiveis = [];
 var indiceRotacaoIndicadores = 0;
 
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family = '"Segoe UI",system-ui,Arial,sans-serif';
+Chart.defaults.plugins.datalabels.display = false;
+
+var M = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+var B = ['JAN / FEV','MAR / ABR','MAI / JUN','JUL / AGO','SET / OUT','NOV / DEZ'];
+var pad = function(a){var r=a.slice();while(r.length<12)r.push(null);return r;};
+var pct = function(v){return Math.round(v)+'%';};
+var pct2 = function(v){return v.toFixed(2).replace('.',',')+'%';};
+var metaLine = function(v,label){return {type:'line',label:label,data:Array(12).fill(v),borderColor:'#c0392b',borderDash:[6,4],borderWidth:1.5,pointRadius:0,hidden:false,datalabels:{display:false}};};
+
+var baseOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  layout: { padding: { top: 22 } },
+  animation: { duration: 400 },
+  scales: { x: { grid: { display: false } }, y: { beginAtZero: true } },
+  plugins: { legend: { display: false } }
+};
+
 function inicializarGraficos() {
-  var cores = ["#163A6B", "#4CAF50", "#E8A93B"];
-  for (var i = 0; i < 3; i++) {
-    var ctx = document.getElementById("grafico-indicador-" + i).getContext("2d");
-    graficosIndicadores[i] = new Chart(ctx, {
-      type: "bar",
-      data: { labels: [], datasets: [{ label: "", data: [], backgroundColor: cores[i] }] },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 400 },
-        plugins: { title: { display: true, text: "", font: { size: 14 } }, legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-  }
+  // Chart.js instances are now initialized dynamically inside atualizarGraficoSlot
 }
 
 function atualizarGraficoSlot(slot, indicador) {
-  var grafico = graficosIndicadores[slot];
+  var ctx = document.getElementById("grafico-indicador-" + slot).getContext("2d");
+  var box = document.getElementById("box-indicador-" + slot);
+  var aviso = document.getElementById("aviso-indicador-" + slot);
+
+  if (graficosIndicadores[slot]) {
+    graficosIndicadores[slot].destroy();
+  }
+
   if (!indicador) {
-    grafico.data.labels = [];
-    grafico.data.datasets[0].data = [];
-    grafico.options.plugins.title.text = "";
-    grafico.update();
+    box.innerHTML = "";
+    aviso.innerHTML = "";
+    graficosIndicadores[slot] = new Chart(ctx, { type: "bar", data: { labels: [], datasets: [] }, options: baseOptions });
     return;
   }
-  grafico.config.type = indicador.tipo === "linha" ? "line" : "bar";
-  grafico.data.labels = indicador.categorias;
-  grafico.data.datasets[0].data = indicador.valores;
-  grafico.data.datasets[0].label = indicador.nome;
-  grafico.options.plugins.title.text = indicador.nome;
-  grafico.update();
+
+  var conf = { type: 'bar', data: { labels: [], datasets: [] }, options: Object.assign({}, baseOptions) };
+
+  if (indicador.tipo === "manutencao") {
+    box.innerHTML = '<div class="box" style="background:#f4a08a">Indicador de Manutenção_2026<span>Objetivo: Cumprir o Plano de Manutenção</span><span>Meta: &gt; 90 % / Mensal</span></div>';
+    aviso.innerHTML = '<div class="ok">Todos os meses lançados cumpriram a meta (100%).</div>';
+    conf.data.labels = M;
+    conf.data.datasets = [
+      {
+        label: '% Manutenção realizada',
+        data: pad(indicador.valores.data.map(function(v){ return v * 100; })),
+        backgroundColor: '#2979ff',
+        borderWidth: 0,
+        datalabels: {
+          display: function(c){return c.raw!==null},
+          color: '#fff',
+          font: { size: 10, weight: 'bold' },
+          formatter: pct,
+          anchor: 'end',
+          align: 'end',
+          offset: -14,
+          backgroundColor: '#2979ff',
+          borderRadius: 2
+        }
+      },
+      metaLine(90, 'Meta 90%')
+    ];
+    conf.options.scales.y = { min: 0, max: 100, ticks: { callback: function(v){return v+'%'}, stepSize: 10 } };
+  }
+  else if (indicador.tipo === "producao_pcp") {
+    box.innerHTML = '<div class="box" style="background:#4a7fe0;color:#fff">Indicador Produção_ 2026<span>Objetivo: Entregar a Produção no Prazo Planejado</span><span>Meta: ≥90 % Mensal</span></div>';
+
+    var a2 = [];
+    if(indicador.valores.entrega) {
+      indicador.valores.entrega.forEach(function(v, i) {
+        if (v < 0.90 && indicador.valores.acoes[i] && /sem a[cç][aã]o/i.test(indicador.valores.acoes[i])) {
+          a2.push(M[i] + ' (' + (v * 100).toFixed(1).replace('.', ',') + '%)');
+        }
+      });
+    }
+    aviso.innerHTML = a2.length
+      ? '<div class="warn"><b>Atenção para auditoria:</b> abaixo da meta com ação "Sem ação" em ' + a2.join(', ') + '. O sistema final exigirá o preenchimento da ação.</div>'
+      : '<div class="ok">Nenhum mês abaixo da meta sem ação registrada.</div>';
+
+    conf.data.labels = M;
+    conf.data.datasets = [
+      {
+        label: '% OP no Prazo',
+        data: pad(indicador.valores.op.map(function(v){ return v * 100; })),
+        backgroundColor: '#4a7fe0',
+        datalabels: { display: function(c){return c.raw!==null}, rotation: -90, color: '#111', font: { size: 9 }, anchor: 'end', align: 'end', formatter: pct }
+      },
+      {
+        label: '% OF no Prazo',
+        data: pad(indicador.valores.of.map(function(v){ return v * 100; })),
+        backgroundColor: '#a6a6a6',
+        datalabels: { display: function(c){return c.raw!==null}, rotation: -90, color: '#111', font: { size: 9 }, anchor: 'end', align: 'end', formatter: pct }
+      },
+      {
+        type: 'line',
+        label: '% Entrega no Prazo Programado',
+        data: pad(indicador.valores.entrega.map(function(v){ return v * 100; })),
+        borderColor: '#2c4fa8',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        spanGaps: false,
+        datalabels: { display: function(c){return c.raw!==null}, backgroundColor: '#ffc000', color: '#fff', font: { size: 10, weight: 'bold' }, borderRadius: 2, padding: 3, formatter: pct, align: 'bottom', offset: 6 }
+      },
+      metaLine(90, 'Meta 90%')
+    ];
+    conf.options.scales.y = { min: 60, max: 105, ticks: { callback: function(v){return v+'%'} } };
+    conf.options.plugins.legend = { display: true, position: 'bottom', labels: { boxWidth: 12 } };
+  }
+  else if (indicador.tipo === "qualidade") {
+    box.innerHTML = '<div class="box" style="background:#f5c26b">Indicador_Qualidade_2026<span>Objetivo: produto NÃO CONFORME (refugo + reprocesso)</span><span>Meta: ≤ 2 % / semestral</span></div>';
+    aviso.innerHTML = '<div class="warn"><b>Meta divergente:</b> o JPG indica ≤ 2% e a planilha indica &lt; 1%. Defina qual vale antes de publicar. 1º semestre: 0,80%.</div>';
+    conf.data.labels = ['1º Semestre', '2º Semestre'];
+    conf.data.datasets = [
+      {
+        label: '% Total refugo',
+        data: indicador.valores.refugo.map(function(v){ return v * 100; }),
+        backgroundColor: '#7ed957',
+        datalabels: { display: true, formatter: pct2, color: '#111', font: { size: 10 }, anchor: 'end', align: 'end' }
+      },
+      {
+        label: '% Total produto reprocessado',
+        data: indicador.valores.reprocesso.map(function(v){ return v * 100; }),
+        backgroundColor: '#9ec9f5',
+        datalabels: { display: true, formatter: pct2, color: '#111', font: { size: 10 }, anchor: 'end', align: 'end' }
+      },
+      {
+        type: 'line',
+        label: '% Reprocesso + refugo',
+        data: indicador.valores.total.map(function(v){ return v * 100; }),
+        borderColor: '#f2a900',
+        backgroundColor: '#f2a900',
+        borderWidth: 2,
+        pointRadius: 4,
+        datalabels: { display: true, backgroundColor: '#ffc000', color: '#111', font: { size: 11, weight: 'bold' }, borderRadius: 2, padding: 3, formatter: pct2, align: 'top', offset: 8 }
+      }
+    ];
+    conf.options.scales.y = { min: 0, max: 1.2, ticks: { callback: function(v){return v.toFixed(1).replace('.',',')+'%'} } };
+    conf.options.plugins.legend = { display: true, position: 'bottom', labels: { boxWidth: 12 } };
+  }
+  else if (indicador.tipo === "perdas") {
+    box.innerHTML = '<div class="box" style="background:#f4a08a">Monitoramento Produção_2026<span>Objetivo: Monitorar os tipos de perdas durante o processo produtivo</span></div>';
+    aviso.innerHTML = '<div class="ok">Valores da planilha (jul/ago = 33, 1, 19, 1, 0, 6, 4) diferem do JPG de exemplo; o protótipo segue a planilha.</div>';
+    conf.data.labels = B;
+
+    var coresPerdas = ['#f4a261', '#f6d743', '#8be05a', '#b5651d', '#b59b1f', '#4f9a3c', '#8fd3f4'];
+    conf.data.datasets = (indicador.valores.datasets || []).map(function(ds, idx) {
+      return {
+        label: ds.label,
+        data: ds.data.concat([null, null]),
+        backgroundColor: coresPerdas[idx % coresPerdas.length],
+        datalabels: { display: function(c){return c.raw!==null}, color: '#111', font: { size: 8 }, anchor: 'end', align: 'end', offset: 0 }
+      };
+    });
+    conf.options.scales.y = { display: false, grid: { display: false } };
+    conf.options.plugins.legend = { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } };
+  }
+
+  graficosIndicadores[slot] = new Chart(ctx, conf);
 }
 
 // Regra: nunca repete um indicador enquanto existir outro ainda não mostrado no ciclo.
