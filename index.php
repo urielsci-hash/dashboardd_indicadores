@@ -11,6 +11,7 @@ exigirLogin();
 <title>Painel de Qualidade — Sinergia Agro</title>
 <link rel="stylesheet" href="assets/css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 </head>
 <body class="painel">
   <header class="cabecalho">
@@ -45,8 +46,8 @@ exigirLogin();
       </div>
     </section>
 
-    <section class="cartao cartao-indicador"><canvas id="grafico-indicador-0"></canvas></section>
-    <section class="cartao cartao-indicador"><canvas id="grafico-indicador-1"></canvas></section>
+    <section class="cartao cartao-indicador"><div id="box-indicador-0"></div><div class="cv" style="position:relative;height:240px;width:100%"><canvas id="grafico-indicador-0"></canvas></div><div id="aviso-indicador-0"></div></section>
+    <section class="cartao cartao-indicador"><div id="box-indicador-1"></div><div class="cv" style="position:relative;height:240px;width:100%"><canvas id="grafico-indicador-1"></canvas></div><div id="aviso-indicador-1"></div></section>
     <section class="cartao cartao-mural" id="mural">
       <h2 class="titulo-cartao" id="titulo-mural-card">Mural</h2>
       <div id="mural-item" class="mural-item">Carregando comunicados...</div>
@@ -70,7 +71,7 @@ exigirLogin();
       </div>
     </section>
 
-    <section class="cartao cartao-indicador"><canvas id="grafico-indicador-2"></canvas></section>
+    <section class="cartao cartao-indicador"><div id="box-indicador-2"></div><div class="cv" style="position:relative;height:240px;width:100%"><canvas id="grafico-indicador-2"></canvas></div><div id="aviso-indicador-2"></div></section>
     <section class="cartao cartao-producao">
       <h2 class="titulo-cartao uppercase">Em formulação</h2>
       <div id="producao-conteudo">Carregando...</div>
