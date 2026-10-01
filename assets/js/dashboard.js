@@ -25,7 +25,14 @@ function emojiParaCodigo(id) {
 async function carregarClima() {
   try {
     var resposta = await fetch("api/clima");
-    var dados = await resposta.json();
+    var texto = await resposta.text();
+    var dados = {};
+    try {
+      dados = JSON.parse(texto);
+    } catch (e) {
+      console.error("Erro JSON na API de indicadores: ", texto);
+      throw e;
+    }
     if (dados.erro || !dados.main) {
       document.getElementById("clima").textContent = "Clima indisponível";
       return;
@@ -141,7 +148,14 @@ function exibirPaginaDesvios() {
 async function carregarStatusQualidade() {
   try {
     var resposta = await fetch("api/status", { cache: "no-store" });
-    var dados = await resposta.json();
+    var texto = await resposta.text();
+    var dados = {};
+    try {
+      dados = JSON.parse(texto);
+    } catch (e) {
+      console.error("Erro JSON na API de indicadores: ", texto);
+      throw e;
+    }
     montarPiramide(dados.status_dias || {});
     desviosDisponiveis = dados.desvios || [];
     if (paginaDesvioAtual >= desviosDisponiveis.length) { paginaDesvioAtual = 0; }
@@ -174,7 +188,14 @@ function exibirNoticias() {
 async function carregarNoticias() {
   try {
     var resposta = await fetch("api/noticias");
-    var dados = await resposta.json();
+    var texto = await resposta.text();
+    var dados = {};
+    try {
+      dados = JSON.parse(texto);
+    } catch (e) {
+      console.error("Erro JSON na API de indicadores: ", texto);
+      throw e;
+    }
     noticiasDisponiveis = dados.noticias || [];
     exibirNoticias();
   } catch (e) {
@@ -223,7 +244,14 @@ function exibirMuralAtual() {
 async function carregarMural() {
   try {
     var resposta = await fetch("api/mural");
-    var dados = await resposta.json();
+    var texto = await resposta.text();
+    var dados = {};
+    try {
+      dados = JSON.parse(texto);
+    } catch (e) {
+      console.error("Erro JSON na API de indicadores: ", texto);
+      throw e;
+    }
     muralItens = dados.mural || [];
     if (muralIndice >= muralItens.length) { muralIndice = 0; }
     exibirMuralAtual();
@@ -262,6 +290,7 @@ function inicializarGraficos() {
 }
 
 function atualizarGraficoSlot(slot, indicador) {
+  try {
   var ctx = document.getElementById("grafico-indicador-" + slot).getContext("2d");
   var box = document.getElementById("box-indicador-" + slot);
   var aviso = document.getElementById("aviso-indicador-" + slot);
@@ -277,7 +306,7 @@ function atualizarGraficoSlot(slot, indicador) {
     return;
   }
 
-  var conf = { type: 'bar', data: { labels: [], datasets: [] }, options: Object.assign({}, baseOptions) };
+  var conf = { type: 'bar', data: { labels: [], datasets: [] }, options: JSON.parse(JSON.stringify(baseOptions)) };
 
   if (indicador.tipo === "manutencao") {
     box.innerHTML = '<div class="box" style="background:#f4a08a">Indicador de Manutenção_2026<span>Objetivo: Cumprir o Plano de Manutenção</span><span>Meta: &gt; 90 % / Mensal</span></div>';
@@ -286,7 +315,7 @@ function atualizarGraficoSlot(slot, indicador) {
     conf.data.datasets = [
       {
         label: '% Manutenção realizada',
-        data: pad(indicador.valores.data.map(function(v){ return v * 100; })),
+        data: pad((indicador.valores.data || []).map(function(v){ return v * 100; })),
         backgroundColor: '#2979ff',
         borderWidth: 0,
         datalabels: {
@@ -324,20 +353,20 @@ function atualizarGraficoSlot(slot, indicador) {
     conf.data.datasets = [
       {
         label: '% OP no Prazo',
-        data: pad(indicador.valores.op.map(function(v){ return v * 100; })),
+        data: pad((indicador.valores.op || []).map(function(v){ return v * 100; })),
         backgroundColor: '#4a7fe0',
         datalabels: { display: function(c){return c.raw!==null}, rotation: -90, color: '#111', font: { size: 9 }, anchor: 'end', align: 'end', formatter: pct }
       },
       {
         label: '% OF no Prazo',
-        data: pad(indicador.valores.of.map(function(v){ return v * 100; })),
+        data: pad((indicador.valores.of || []).map(function(v){ return v * 100; })),
         backgroundColor: '#a6a6a6',
         datalabels: { display: function(c){return c.raw!==null}, rotation: -90, color: '#111', font: { size: 9 }, anchor: 'end', align: 'end', formatter: pct }
       },
       {
         type: 'line',
         label: '% Entrega no Prazo Programado',
-        data: pad(indicador.valores.entrega.map(function(v){ return v * 100; })),
+        data: pad((indicador.valores.entrega || []).map(function(v){ return v * 100; })),
         borderColor: '#2c4fa8',
         borderWidth: 1.5,
         pointRadius: 0,
@@ -356,20 +385,20 @@ function atualizarGraficoSlot(slot, indicador) {
     conf.data.datasets = [
       {
         label: '% Total refugo',
-        data: indicador.valores.refugo.map(function(v){ return v * 100; }),
+        data: (indicador.valores.refugo || []).map(function(v){ return v * 100; }),
         backgroundColor: '#7ed957',
         datalabels: { display: true, formatter: pct2, color: '#111', font: { size: 10 }, anchor: 'end', align: 'end' }
       },
       {
         label: '% Total produto reprocessado',
-        data: indicador.valores.reprocesso.map(function(v){ return v * 100; }),
+        data: (indicador.valores.reprocesso || []).map(function(v){ return v * 100; }),
         backgroundColor: '#9ec9f5',
         datalabels: { display: true, formatter: pct2, color: '#111', font: { size: 10 }, anchor: 'end', align: 'end' }
       },
       {
         type: 'line',
         label: '% Reprocesso + refugo',
-        data: indicador.valores.total.map(function(v){ return v * 100; }),
+        data: (indicador.valores.total || []).map(function(v){ return v * 100; }),
         borderColor: '#f2a900',
         backgroundColor: '#f2a900',
         borderWidth: 2,
@@ -399,6 +428,10 @@ function atualizarGraficoSlot(slot, indicador) {
   }
 
   graficosIndicadores[slot] = new Chart(ctx, conf);
+  } catch (e) {
+    console.error("Erro ao renderizar grafico do slot " + slot, e);
+    document.getElementById("box-indicador-" + slot).innerHTML = "<div class='box erro'>Erro ao exibir indicador</div>";
+  }
 }
 
 // Regra: nunca repete um indicador enquanto existir outro ainda não mostrado no ciclo.
@@ -423,7 +456,14 @@ function atualizarIndicadoresSlots() {
 async function carregarIndicadores() {
   try {
     var resposta = await fetch("api/indicadores");
-    var dados = await resposta.json();
+    var texto = await resposta.text();
+    var dados = {};
+    try {
+      dados = JSON.parse(texto);
+    } catch (e) {
+      console.error("Erro JSON na API de indicadores: ", texto);
+      throw e;
+    }
     indicadoresDisponiveis = dados.indicadores || [];
     if (indiceRotacaoIndicadores >= indicadoresDisponiveis.length) { indiceRotacaoIndicadores = 0; }
     atualizarIndicadoresSlots();
@@ -466,7 +506,14 @@ function montarProducao(producao, tanques) {
 async function carregarEmFormulacao() {
   try {
     var resposta = await fetch("api/em-formulacao");
-    var dados = await resposta.json();
+    var texto = await resposta.text();
+    var dados = {};
+    try {
+      dados = JSON.parse(texto);
+    } catch (e) {
+      console.error("Erro JSON na API de indicadores: ", texto);
+      throw e;
+    }
     montarProducao(dados.producao, dados.producao_tanques || []);
   } catch (e) {
     console.error("Erro ao carregar em formulação", e);
